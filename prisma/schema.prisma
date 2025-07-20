@@ -4,30 +4,57 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url = env("DATABASE_URL")
-}
-
-model User {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  password  String
-  elections Election[]
+  url      = env("DATABASE_URL")
 }
 
 model Election {
-  id        String   @id @default(uuid())
-  title     String
-  category  String
-  options   Option[]
-  createdAt DateTime @default(now())
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  id          String      @id @default(uuid())
+  title       String
+  description String
+  creatorId   String
+  creator     User        @relation("UserElections", fields: [creatorId], references: [id])
+  candidates  Candidate[]
+  votes       Vote[]
+  options     Option[]
+  createdAt   DateTime    @default(now())
+  endsAt      DateTime
+}
+
+model Candidate {
+  id         String   @id @default(uuid())
+  name       String
+  electionId String
+  election   Election @relation(fields: [electionId], references: [id])
+  votes      Vote[]
 }
 
 model Option {
   id         String   @id @default(uuid())
-  label      String
-  votes      Int      @default(0)
+  name       String
   electionId String
   election   Election @relation(fields: [electionId], references: [id])
+}
+
+model Vote {
+  id          String   @id @default(uuid())
+  userId      String
+  candidateId String
+  electionId  String
+  createdAt   DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  candidate Candidate @relation(fields: [candidateId], references: [id])
+  election  Election  @relation(fields: [electionId], references: [id])
+
+  @@unique([userId, electionId])
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  createdAt DateTime   @default(now())
+  elections Election[] @relation("UserElections") // 👈 matches "creator" field
+  votes     Vote[]
 }
