@@ -55,6 +55,6 @@ model User {
   email     String     @unique
   password  String
   createdAt DateTime   @default(now())
-  elections Election[] @relation("UserElections") // 👈 matches "creator" field
+  elections Election[] @relation("UserElections") //  matches "creator" field
   votes     Vote[]
 }

@@ -1,15 +1,16 @@
+console.log("Election routes loaded");
 import { Router } from 'express';
-import {
-  createElection,
-  voteInElection,
-  getResults,
-} from '../controllers/election.controller';
-import authenticateToken from '../middleware/auth.middleware';
+import * as electionController from '../controllers/election.controller';
+import authenticateToken from '../middlewares/auth.middleware';
 
 const router = Router();
 
-router.post('/create', authenticateToken, createElection);
-router.post('/vote', authenticateToken, voteInElection);
-router.get('/:electionId/results', getResults);
+console.log('createElection:', typeof electionController.createElection);
+console.log('voteInElection:', typeof electionController.voteInElection);
+console.log('getResults:', typeof electionController.getResults);
+
+router.post('/create', authenticateToken, electionController.createElection);
+router.post('/vote', authenticateToken, electionController.voteInElection);
+router.get('/:electionId/results', electionController.getResults);
 
 export default router;

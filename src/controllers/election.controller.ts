@@ -1,13 +1,17 @@
 import { Request, Response } from 'express';
 import prisma from '../config/prisma';
-import { AuthenticatedRequest } from '../middleware/auth.middleware';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
 
 // Create Election
 export const createElection = async (req: AuthenticatedRequest, res: Response) => {
   const { title, description, endsAt, candidates } = req.body;
   const userId = req.user?.id;
 
-  if (!candidates || candidates.length < 2) {
+  if (!title || !description || !endsAt || !Array.isArray(candidates)) {
+    return res.status(400).json({ message: 'Missing required fields or invalid format.' });
+  }
+
+  if (candidates.length < 2) {
     return res.status(400).json({ message: 'Provide at least 2 candidates.' });
   }
 
@@ -28,52 +32,25 @@ export const createElection = async (req: AuthenticatedRequest, res: Response) =
     });
 
     res.status(201).json(election);
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to create election', details: err });
-  }
-};
+  } catch (err: any) {
+    
 
-// Vote in Election
-export const voteInElection = async (req: AuthenticatedRequest, res: Response) => {
-  const { electionId, candidateId } = req.body;
-  const userId = req.user?.id;
-
-  try {
-    const vote = await prisma.vote.create({
-      data: {
-        userId: userId!,
-        electionId,
-        candidateId,
+    console.error('Election creation error:', err); // log error for debugging
+    res.status(500).json({
+      error: 'Failed to create election',
+      details: {
+        name: err.name,
+        message: err.message,
+        meta: err.meta,
       },
     });
-
-    res.status(201).json({ message: 'Vote cast successfully', vote });
-  } catch (err: any) {
-    if (err.code === 'P2002') {
-      res.status(400).json({ message: 'You have already voted in this election.' });
-    } else {
-      res.status(500).json({ error: 'Voting failed', details: err });
-    }
   }
+}
+
+export const voteInElection = async (req: AuthenticatedRequest, res: Response) => {
+  // logic
 };
 
-// Get election results
-export const getResults = async (req: Request, res: Response) => {
-  const { electionId } = req.params;
-
-  try {
-    const candidates = await prisma.candidate.findMany({
-      where: { electionId },
-      include: { votes: true },
-    });
-
-    const results = candidates.map(c => ({
-      candidate: c.name,
-      votes: c.votes.length,
-    }));
-
-    res.json({ electionId, results });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to retrieve results' });
-  }
+export const getResults = async (req: AuthenticatedRequest, res: Response) => {
+  // logic
 };
