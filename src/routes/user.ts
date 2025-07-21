@@ -4,9 +4,10 @@ import bcrypt from 'bcryptjs';
 
 const router = Router();
 const prisma = new PrismaClient();
+const JWT_SECRET = process.env.JWT_SECRET
 
 router.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, Username } = req.body;
 
   if (!email || !password) return res.status(400).json({ message: 'Missing fields' });
 
@@ -15,7 +16,7 @@ router.post('/register', async (req, res) => {
 
   const hashed = await bcrypt.hash(password, 10);
   const newUser = await prisma.user.create({
-    data: { email, password: hashed }
+    data: { email, password: hashed, Username, }
   });
 
   res.status(201).json({ message: 'User created', userId: newUser.id });
