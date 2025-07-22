@@ -3,12 +3,22 @@ import { registerUser, loginUser, getUserProfile } from '../controllers/user.con
 import authenticateToken from '../middlewares/auth.middleware';
 import { loginRateLimiter, registerRateLimiter } from '../middlewares/rateLimiter';
 import { refreshAccessToken } from '../controllers/auth.controller';
-const router = Router();
+import { requestPasswordReset, resetPassword } from '../controllers/password.controller';
+import { PrismaClient } from '@prisma/client';
 
-router.post('/register', registerUser, registerRateLimiter);
-router.post('/login', loginUser);
+const router = Router();
+const prisma = new PrismaClient();
+
+// Auth & user routes
+router.post('/register', registerRateLimiter, registerUser);
+router.post('/login', loginRateLimiter, loginUser);
 router.get('/profile', authenticateToken, getUserProfile);
-router.post('/login', loginRateLimiter, refreshAccessToken);
+
+// Token handling
 router.post('/refresh-token', refreshAccessToken);
+
+// Password reset
+router.post('/request-password-reset', requestPasswordReset);
+router.post('/reset-password', resetPassword);
 
 export default router;

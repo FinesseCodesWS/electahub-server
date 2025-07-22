@@ -50,11 +50,23 @@ model Vote {
 }
 
 model User {
-  id        String     @id @default(uuid())
-  username  String
-  email     String     @unique
-  password  String
-  createdAt DateTime   @default(now())
-  elections Election[] @relation("UserElections") //  matches "creator" field
-  votes     Vote[]
+  id                  String               @id @default(uuid())
+  username            String
+  email               String               @unique
+  password            String
+  createdAt           DateTime             @default(now())
+  elections           Election[]           @relation("UserElections") //  matches "creator" field
+  votes               Vote[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  expiresAt DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

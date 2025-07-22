@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import jwt from 'jsonwebtoken';
 import { generateTokens } from '../utils/generateTokens';
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 const prisma = new PrismaClient();
 
@@ -68,4 +69,51 @@ export const refreshAccessToken = async (req: Request, res: Response) => {
   } catch (err) {
     return res.status(403).json({ message: 'Invalid or expired refresh token' });
   }
+};
+export const requestPasswordReset = async (req: Request, res: Response) => {
+  const { email } = req.body;
+  const user = await prisma.user.findUnique({ where: { email } });
+
+  if (!user) return res.status(404).json({ error: 'User not found' });
+
+  const token = crypto.randomBytes(32).toString('hex');
+  const expiresAt = new Date(Date.now() + 15 * 60 * 1000); // 15 mins
+
+  await prisma.passwordResetToken.create({
+    data: {
+      userId: user.id,
+      token,
+      expiresAt,
+    },
+  });
+
+  // Placeholder for sending email
+  console.log(`Send reset token to ${email}: ${token}`);
+
+  res.status(200).json({ message: 'Reset token sent to email' });
+};
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  const reset = await prisma.passwordResetToken.findFirst({
+    where: {
+      token,
+      expiresAt: { gte: new Date() },
+    },
+  });
+
+  if (!reset) return res.status(400).json({ error: 'Invalid or expired token' });
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  await prisma.user.update({
+    where: { id: reset.userId },
+    data: { password: hashedPassword },
+  });
+
+  await prisma.passwordResetToken.deleteMany({
+    where: { userId: reset.userId },
+  });
+
+  res.status(200).json({ message: 'Password reset successful' });
 };
